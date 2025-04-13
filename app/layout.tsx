@@ -11,8 +11,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "Système de Gestion de Boutique",
-  description: "Gérez votre inventaire, vos ventes et vos achats",
-    generator: 'v0.dev'
+  description: "Gérez votre inventaire, vos ventes et vos achats"
 }
 
 export default function RootLayout({
