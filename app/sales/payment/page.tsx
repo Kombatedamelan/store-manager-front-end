@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -22,10 +23,26 @@ export default function PaymentPage() {
   const [amountReceived, setAmountReceived] = useState("")
   const [change, setChange] = useState(0)
   const [error, setError] = useState("")
+  const token = localStorage.getItem("token")
 
   // Get total amount from URL params
   const totalAmount = Number.parseFloat(searchParams.get("total") || "0")
   const customerName = searchParams.get("customer") || "Client"
+  const customerPhone = searchParams.get("phone") || ""
+
+  const rawProducts = searchParams.get("products");
+
+  
+let products = [];
+if (rawProducts) {
+  try {
+    products = JSON.parse(rawProducts);
+    console.log("Le tableau de produit:", products)
+  } catch (e) {
+    console.error("Erreur de parsing JSON :", e);
+  }
+}
+    
 
   useEffect(() => {
     if (paymentMethod === "cash" && amountReceived) {
@@ -51,17 +68,50 @@ export default function PaymentPage() {
 
     setError("")
     setIsProcessing(true)
+    
+    // Créez les données de la commande
+    const orderData = {
+      name: customerName,
+      phone: customerPhone,
+      products: products.map((item) => ({
+        id: item.productId, // OK ici car c’est comme ça dans ton objet
+        quantity: Number(item.quantity),
+        price: Number(item.price), // À inclure si ton backend utilise price
+      })),
+    
+    };
+
+   
+    console.log(orderData);
 
     // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false)
-      setIsComplete(true)
+    axios
+      .post('http://127.0.0.1:8000/api/orders', orderData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }) // Remplacez cette URL par l'URL de votre API
+      .then((response) => {
+        setIsProcessing(false);
+        setIsComplete(true);
+        setTimeout(() => {
+          router.push('/sales'); // Redirige vers la page des ventes après le paiement réussi
+        }, 2000);
+      })
+      .catch((error) => {
+        setIsProcessing(false);
+        setError("Erreur lors du paiement");
+        console.error("Erreur lors de l'envoi des données au serveur:", error);
+       
+      });
+    // setTimeout(() => {
+    //   setIsProcessing(false)
+    //   setIsComplete(true)
 
-      // Redirect after showing success message
-      setTimeout(() => {
-        router.push("/sales")
-      }, 2000)
-    }, 2000)
+    //   setTimeout(() => {
+    //     router.push("/sales")
+    //   }, 2000)
+    // }, 2000)
   }
 
   return (
@@ -79,8 +129,13 @@ export default function PaymentPage() {
           <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span className="font-medium text-amber-900">Client:</span>
+                <span className="font-medium text-amber-900">Nom du Client:</span>
                 <span className="text-amber-900">{customerName}</span>
+              </div>
+              <Separator className="bg-amber-300" />
+              <div className="flex justify-between">
+                <span className="font-medium text-amber-900">Téléphone du Client:</span>
+                <span className="text-amber-900">{customerPhone}</span>
               </div>
               <Separator className="bg-amber-300" />
               <div className="flex justify-between">

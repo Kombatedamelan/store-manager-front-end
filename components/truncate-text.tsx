@@ -4,7 +4,7 @@ interface TruncateTextProps {
   className?: string
 }
 
-export function TruncateText({ text, maxLength, className = "" }: TruncateTextProps) {
+export function TruncateText({ text="", maxLength, className = "" }: TruncateTextProps) {
   if (text.length <= maxLength) {
     return <span className={className}>{text}</span>
   }

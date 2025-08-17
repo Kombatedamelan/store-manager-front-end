@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useEffect} from "react"
+import axios from "axios"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,44 +14,44 @@ import { Trash, Plus, ArrowRight, Loader2 } from "lucide-react"
 import { useSettings } from "@/contexts/settings-context"
 
 // Sample product data
-const products = [
-  {
-    id: 1,
-    name: "Smartphone X",
-    price: 499.99,
-    stock: 24,
-  },
-  {
-    id: 2,
-    name: "Écouteurs Sans Fil",
-    price: 199.0,
-    stock: 15,
-  },
-  {
-    id: 3,
-    name: "Ordinateur Portable Pro",
-    price: 1299.0,
-    stock: 8,
-  },
-  {
-    id: 4,
-    name: "Montre Connectée",
-    price: 199.0,
-    stock: 12,
-  },
-  {
-    id: 5,
-    name: "Enceinte Bluetooth",
-    price: 99.0,
-    stock: 3,
-  },
-  {
-    id: 6,
-    name: "Tablette Mini",
-    price: 349.0,
-    stock: 10,
-  },
-]
+// const products = [
+//   {
+//     id: 1,
+//     name: "Smartphone X",
+//     price: 499.99,
+//     stock: 24,
+//   },
+//   {
+//     id: 2,
+//     name: "Écouteurs Sans Fil",
+//     price: 199.0,
+//     stock: 15,
+//   },
+//   {
+//     id: 3,
+//     name: "Ordinateur Portable Pro",
+//     price: 1299.0,
+//     stock: 8,
+//   },
+//   {
+//     id: 4,
+//     name: "Montre Connectée",
+//     price: 199.0,
+//     stock: 12,
+//   },
+//   {
+//     id: 5,
+//     name: "Enceinte Bluetooth",
+//     price: 99.0,
+//     stock: 3,
+//   },
+//   {
+//     id: 6,
+//     name: "Tablette Mini",
+//     price: 349.0,
+//     stock: 10,
+//   },
+// ]
 
 export default function NewSalePage() {
   const router = useRouter()
@@ -58,8 +60,30 @@ export default function NewSalePage() {
   const [selectedProduct, setSelectedProduct] = useState("")
   const [quantity, setQuantity] = useState("1")
   const [customerName, setCustomerName] = useState("")
+  const [customerPhone, setCustomerPhone] = useState("")
   const [paymentMethod, setPaymentMethod] = useState("cash")
   const [isLoading, setIsLoading] = useState(false)
+  const [products, setProducts] = useState([])
+  const token = localStorage.getItem("token")
+
+
+  useEffect(() => {
+        const fetchProducts = async () => {
+          try {
+            const res = await axios.get("http://127.0.0.1:8000/api/products", {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }) 
+            
+            setProducts(res.data) 
+          } catch (error) {
+            console.error("Erreur lors du chargement des produits :", error)
+          }
+        }
+      
+        fetchProducts()
+      }, [])
 
   const handleAddItem = () => {
     if (!selectedProduct) return
@@ -67,6 +91,16 @@ export default function NewSalePage() {
     const product = products.find((p) => p.id.toString() === selectedProduct)
     if (!product) return
 
+    if (product.qte <= 0) {
+      alert("Ce produit est en rupture de stock.")
+      return
+    }
+    const qty = parseInt(quantity) 
+    if (qty > product.qte) {
+      alert(`Quantité demandée trop élevée. Vérifiez le stock et relancez la commande`)
+      return
+    }
+       
     const existingItemIndex = items.findIndex((item) => item.productId.toString() === selectedProduct)
 
     if (existingItemIndex >= 0) {
@@ -103,15 +137,20 @@ export default function NewSalePage() {
   }
 
   const handleProceedToPayment = () => {
-    if (items.length === 0 || !customerName) return
+    if (items.length === 0 || !customerName || !customerPhone) return
+    
 
     setIsLoading(true)
+
+     // Créez une chaîne de requête pour les produits, quantités et prix
+     const productsQuery = encodeURIComponent(JSON.stringify(items));
 
     // Simulate processing delay
     setTimeout(() => {
       setIsLoading(false)
       // Navigate to payment page with total and customer info
-      router.push(`/sales/payment?total=${calculateTotal()}&customer=${encodeURIComponent(customerName)}`)
+      router.push(`/sales/payment?total=${calculateTotal()}&customer=${encodeURIComponent(customerName)}&phone=${encodeURIComponent(customerPhone)}&products=${productsQuery}`);
+      // router.push(`/sales/payment?total=${calculateTotal()}&customer=${encodeURIComponent(customerName)}&phone=${encodeURIComponent(customerPhone)}&${productsQuery}`)
     }, 1000)
   }
 
@@ -143,10 +182,10 @@ export default function NewSalePage() {
                         <SelectItem
                           key={product.id}
                           value={product.id.toString()}
-                          disabled={product.stock === 0}
+                          disabled={product.qte === 0}
                           className="text-amber-900"
                         >
-                          {product.name} - {product.price.toFixed(2)} {settings.currency} ({product.stock} en stock)
+                          {product.name} - {Number(product.price).toFixed(2)} {settings.currency} ({product.qte} en stock)
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -199,6 +238,18 @@ export default function NewSalePage() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="customer" className="text-right font-bold text-amber-900">
+                  Téléphone
+                </Label>
+                <Input
+                  id="customer"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  className="col-span-3 border-2 border-amber-800 bg-white text-amber-900"
+                  placeholder="Téléphone du client"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="payment" className="text-right font-bold text-amber-900">
                   Paiement
                 </Label>
@@ -210,7 +261,7 @@ export default function NewSalePage() {
                     <SelectItem value="cash" className="text-amber-900">
                       Espèces
                     </SelectItem>
-                    <SelectItem value="card" className="text-amber-900">
+                    {/* <SelectItem value="card" className="text-amber-900">
                       Carte
                     </SelectItem>
                     <SelectItem value="transfer" className="text-amber-900">
@@ -218,7 +269,7 @@ export default function NewSalePage() {
                     </SelectItem>
                     <SelectItem value="mobile" className="text-amber-900">
                       Mobile Money
-                    </SelectItem>
+                    </SelectItem> */}
                   </SelectContent>
                 </Select>
               </div>
@@ -256,7 +307,7 @@ export default function NewSalePage() {
                     <TableRow key={index} className="border-b border-amber-300">
                       <TableCell className="font-medium text-amber-900">{item.name}</TableCell>
                       <TableCell className="text-right text-amber-900">
-                        {item.price.toFixed(2)} {settings.currency}
+                        {Number(item.price).toFixed(2)} {settings.currency}
                       </TableCell>
                       <TableCell className="text-right text-amber-900">{item.quantity}</TableCell>
                       <TableCell className="text-right text-amber-900">

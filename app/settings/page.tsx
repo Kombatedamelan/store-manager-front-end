@@ -11,24 +11,65 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSettings } from "@/contexts/settings-context"
 import { Loader2, Save, RotateCcw, Store, User, Palette } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { useEffect} from "react"
+import axios from "axios"
+
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({ ...settings })
+  const [store, setStore] = useState({
+    storeName: "",
+    storePhone: "",
+    storeAddress: "",
+    currency: "",
+    adminPhone: "",
+    adminPassword: "",
+    logo: "",
+    primaryColor: "",
+  });
+  
+
+  
+  const token = localStorage.getItem("token")
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    if (token) {
+      axios
+        .get("http://127.0.0.1:8000/api/user/setting", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
+          setStore(res.data);
+          setFormData(res.data);
+          console.log("Données récupérées :", res.data);
+        })
+        .catch((error) => {
+          console.error("Erreur lors de la récupération des données :", error);
+        });
+    }
+  }, [token]); // Dépendance sur 'token' pour relancer l'effet si nécessaire
+  
+
+  // console.log("Enregistrement avec :", formData) 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setStore((prev) => ({ ...prev, [name]: value }));
+  };
+  
 
   const handleSave = () => {
+    
     setIsLoading(true)
 
     // Simuler un délai de sauvegarde
     setTimeout(() => {
-      updateSettings(formData)
       setIsLoading(false)
       toast({
         title: "Paramètres sauvegardés",
@@ -37,11 +78,65 @@ export default function SettingsPage() {
       })
     }, 1000)
   }
+  const handleUpdate = () => {
+    setIsLoading(true)
+
+    // Si le mot de passe n'est pas vide, alors on l'inclut dans la mise à jour.
+    
+  // Préparer les données à envoyer
+  const updateData: any = {
+    adminPhone: store.adminPhone,
+    storeName: store.storeName,
+    storePhone: store.storePhone,
+    storeAddress: store.storeAddress,
+    currency: store.currency,
+    logo: store.logo,
+    primaryColor: store.primaryColor,
+  };
+
+  // Ajouter le mot de passe uniquement s'il est modifié
+  if (store.adminPassword && store.adminPassword !== "") {
+    updateData.adminPassword = store.adminPassword; // Assure-toi que le mot de passe est bien celui que l'utilisateur veut envoyer
+  }
+
+  console.log("Données envoyées :", updateData);
+  
+    axios
+      .put(
+        "http://127.0.0.1:8000/api/user/setting",
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      .then((response) => {
+        console.log("Réponse du serveur :", response);
+        toast({
+          title: "Informations mises à jour",
+          description: "Les informations de la boutique ont été modifiées avec succès.",
+        });
+      })
+      .catch((error) => {
+        console.error("Erreur de mise à jour :", error);
+        toast({
+          title: "Erreur",
+          description: "Échec de la mise à jour des informations.",
+          variant: "destructive",
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+  
+  
 
   const handleReset = () => {
     if (window.confirm("Êtes-vous sûr de vouloir réinitialiser tous les paramètres?")) {
       resetSettings()
-      setFormData({ ...settings })
+      setFormData({ ...store })
       toast({
         title: "Paramètres réinitialisés",
         description: "Tous les paramètres ont été restaurés aux valeurs par défaut.",
@@ -86,7 +181,7 @@ export default function SettingsPage() {
                   <Input
                     id="storeName"
                     name="storeName"
-                    value={formData.storeName}
+                    value={store.storeName}
                     onChange={handleChange}
                     className="border-2 border-amber-800 bg-white text-amber-900"
                     placeholder="Nom de votre boutique"
@@ -100,7 +195,7 @@ export default function SettingsPage() {
                   <Input
                     id="storePhone"
                     name="storePhone"
-                    value={formData.storePhone}
+                    value={store.storePhone}
                     onChange={handleChange}
                     className="border-2 border-amber-800 bg-white text-amber-900"
                     placeholder="Numéro de téléphone de la boutique"
@@ -114,7 +209,7 @@ export default function SettingsPage() {
                   <Input
                     id="storeAddress"
                     name="storeAddress"
-                    value={formData.storeAddress}
+                    value={store.storeAddress}
                     onChange={handleChange}
                     className="border-2 border-amber-800 bg-white text-amber-900"
                     placeholder="Adresse de la boutique"
@@ -128,7 +223,7 @@ export default function SettingsPage() {
                   <Input
                     id="currency"
                     name="currency"
-                    value={formData.currency}
+                    value={store.currency}
                     onChange={handleChange}
                     className="border-2 border-amber-800 bg-white text-amber-900"
                     placeholder="Devise (ex: FCFA)"
@@ -156,7 +251,7 @@ export default function SettingsPage() {
                   <Input
                     id="adminPhone"
                     name="adminPhone"
-                    value={formData.adminPhone}
+                    value={store.adminPhone}
                     onChange={handleChange}
                     className="border-2 border-amber-800 bg-white text-amber-900"
                     placeholder="Numéro de téléphone pour la connexion"
@@ -171,7 +266,7 @@ export default function SettingsPage() {
                     id="adminPassword"
                     name="adminPassword"
                     type="password"
-                    value={formData.adminPassword}
+                    value={store.adminPassword ? "":""}
                     onChange={handleChange}
                     className="border-2 border-amber-800 bg-white text-amber-900"
                     placeholder="Mot de passe pour la connexion"
@@ -200,13 +295,13 @@ export default function SettingsPage() {
                     <Input
                       id="primaryColor"
                       name="primaryColor"
-                      value={formData.primaryColor}
+                      value={store.primaryColor}
                       onChange={handleChange}
                       className="border-2 border-amber-800 bg-white text-amber-900"
                       placeholder="Couleur (ex: amber)"
                     />
                     <div
-                      className={`w-10 h-10 rounded-md border-2 border-amber-800 bg-${formData.primaryColor}-800`}
+                      className={`w-10 h-10 rounded-md border-2 border-amber-800 bg-${store.primaryColor}-800`}
                     ></div>
                   </div>
                   <p className="text-xs text-amber-700">
@@ -221,7 +316,7 @@ export default function SettingsPage() {
                   <Input
                     id="logo"
                     name="logo"
-                    value={formData.logo || ""}
+                    value={store.logo || ""}
                     onChange={handleChange}
                     className="border-2 border-amber-800 bg-white text-amber-900"
                     placeholder="URL du logo (optionnel)"
@@ -242,7 +337,7 @@ export default function SettingsPage() {
           <RotateCcw className="mr-2 h-4 w-4" /> Réinitialiser
         </Button>
         <Button
-          onClick={handleSave}
+          onClick={handleUpdate}
           disabled={isLoading}
           className="gap-2 bg-amber-800 hover:bg-amber-900 text-white border-2 border-amber-900"
         >

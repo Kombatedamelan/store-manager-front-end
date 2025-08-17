@@ -2,18 +2,42 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { useEffect, useState } from "react"
+import axios from "axios"
 
-const data = [
-  { name: "Lun", total: 420 },
-  { name: "Mar", total: 380 },
-  { name: "Mer", total: 520 },
-  { name: "Jeu", total: 490 },
-  { name: "Ven", total: 610 },
-  { name: "Sam", total: 750 },
-  { name: "Dim", total: 480 },
-]
+
+// const data = [
+//   { name: "Lun", total: 420 },
+//   { name: "Mar", total: 380 },
+//   { name: "Mer", total: 520 },
+//   { name: "Jeu", total: 490 },
+//   { name: "Ven", total: 610 },
+//   { name: "Sam", total: 750 },
+//   { name: "Dim", total: 480 },
+// ]
 
 export function SalesSummary() {
+  const [data, setData] = useState([])
+  const token = localStorage.getItem("token")
+  useEffect(() => {
+    const fetchWeeklySales = async () => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/weekly-sales", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }) // remplace par ton URL
+        setData(res.data)
+      } catch (err) {
+        console.error("Erreur lors de la récupération des ventes :", err)
+      }
+    }
+
+    fetchWeeklySales()
+  }, [])
+
+
+
   return (
     <Card className="border-4 border-amber-800 shadow-md bg-amber-100">
       <CardHeader className="bg-amber-800 text-white border-b-2 border-amber-900">

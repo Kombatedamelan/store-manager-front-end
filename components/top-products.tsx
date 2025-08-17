@@ -1,45 +1,79 @@
+"use client"
+
+
+
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import axios from "axios"
 
-const topProducts = [
-  {
-    id: 1,
-    name: "Smartphone X",
-    category: "Électronique",
-    sold: 12,
-    revenue: 5988,
-  },
-  {
-    id: 2,
-    name: "Écouteurs Sans Fil",
-    category: "Audio",
-    sold: 8,
-    revenue: 1592,
-  },
-  {
-    id: 3,
-    name: "Ordinateur Portable Pro",
-    category: "Informatique",
-    sold: 5,
-    revenue: 6495,
-  },
-  {
-    id: 4,
-    name: "Montre Connectée",
-    category: "Accessoires",
-    sold: 7,
-    revenue: 1393,
-  },
-  {
-    id: 5,
-    name: "Enceinte Bluetooth",
-    category: "Audio",
-    sold: 6,
-    revenue: 594,
-  },
-]
+// const topProducts = [
+//   {
+//     id: 1,
+//     name: "Smartphone X",
+//     category: "Électronique",
+//     sold: 12,
+//     revenue: 5988,
+//   },
+//   {
+//     id: 2,
+//     name: "Écouteurs Sans Fil",
+//     category: "Audio",
+//     sold: 8,
+//     revenue: 1592,
+//   },
+//   {
+//     id: 3,
+//     name: "Ordinateur Portable Pro",
+//     category: "Informatique",
+//     sold: 5,
+//     revenue: 6495,
+//   },
+//   {
+//     id: 4,
+//     name: "Montre Connectée",
+//     category: "Accessoires",
+//     sold: 7,
+//     revenue: 1393,
+//   },
+//   {
+//     id: 5,
+//     name: "Enceinte Bluetooth",
+//     category: "Audio",
+//     sold: 6,
+//     revenue: 594,
+//   },
+// ]
+
 
 export function TopProducts() {
+
+
+const [topProducts, setTopProducts] = useState([])
+const token = localStorage.getItem("token")
+
+useEffect(() => {
+    const fetchTopProducts = async () => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/products/popular", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }) 
+        // console.log("Produits de l'API", res.data)
+        setTopProducts(res.data) // À adapter selon structure du JSON
+      } catch (error) {
+        console.error("Erreur lors du chargement des produits :", error)
+      }
+    }
+  
+    fetchTopProducts()
+  }, [])
+
+
+
+
+
   return (
     <Card className="border-4 border-amber-800 shadow-md bg-amber-100">
       <CardHeader className="bg-amber-800 text-white border-b-2 border-amber-900">

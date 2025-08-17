@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import axios from "axios"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,61 +10,99 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Eye } from "lucide-react"
 
+
+
 // Sample purchases data
-const initialPurchases = [
-  {
-    id: 1,
-    date: "2023-04-13T09:30:00",
-    supplier: "Tech Supplies Inc.",
-    items: 5,
-    total: 2499.95,
-    status: "reçu",
-  },
-  {
-    id: 2,
-    date: "2023-04-11T14:15:00",
-    supplier: "Electronics Wholesale",
-    items: 3,
-    total: 1847.0,
-    status: "reçu",
-  },
-  {
-    id: 3,
-    date: "2023-04-09T11:45:00",
-    supplier: "Gadget Distributors",
-    items: 2,
-    total: 998.0,
-    status: "reçu",
-  },
-  {
-    id: 4,
-    date: "2023-04-07T10:30:00",
-    supplier: "Tech Supplies Inc.",
-    items: 4,
-    total: 1596.0,
-    status: "reçu",
-  },
-  {
-    id: 5,
-    date: "2023-04-05T15:00:00",
-    supplier: "Electronics Wholesale",
-    items: 6,
-    total: 2994.0,
-    status: "reçu",
-  },
-  {
-    id: 6,
-    date: "2023-04-03T13:30:00",
-    supplier: "Gadget Distributors",
-    items: 3,
-    total: 1497.0,
-    status: "reçu",
-  },
-]
+// const initialPurchases = [
+//   {
+//     id: 1,
+//     date: "2023-04-13T09:30:00",
+//     supplier: "Tech Supplies Inc.",
+//     items: 5,
+//     total: 2499.95,
+//     status: "reçu",
+//   },
+//   {
+//     id: 2,
+//     date: "2023-04-11T14:15:00",
+//     supplier: "Electronics Wholesale",
+//     items: 3,
+//     total: 1847.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 3,
+//     date: "2023-04-09T11:45:00",
+//     supplier: "Gadget Distributors",
+//     items: 2,
+//     total: 998.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 4,
+//     date: "2023-04-07T10:30:00",
+//     supplier: "Tech Supplies Inc.",
+//     items: 4,
+//     total: 1596.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 5,
+//     date: "2023-04-05T15:00:00",
+//     supplier: "Electronics Wholesale",
+//     items: 6,
+//     total: 2994.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 6,
+//     date: "2023-04-03T13:30:00",
+//     supplier: "Gadget Distributors",
+//     items: 3,
+//     total: 1497.0,
+//     status: "reçu",
+//   },
+// ]
 
 export default function PurchasesPage() {
-  const [purchases] = useState(initialPurchases)
+  const [purchases, setPurchases] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
+ 
+
+  const token = localStorage.getItem("token")
+ 
+
+  useEffect(() => {
+    const fetchPurchases = async () => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/purchase", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }) // remplace par ton URL d'API
+        setPurchases(res.data.achats)
+      } catch (err) {
+        
+        console.error(err)
+      } 
+    }
+
+    fetchPurchases()
+  }, [])
+
+
+
+  
+
+  
+
+  //conversion de la date afin d'éviter une erreur invalid Date
+  function parseFrenchDate(dateString: string) {
+  const [day, month, yearAndTime] = dateString.split("/")
+  const [year, time] = yearAndTime.split(" ")
+  return new Date(`${year}-${month}-${day}T${time}`)
+  }
+
 
   // Filter purchases based on search query
   const filteredPurchases = purchases.filter((purchase) =>
@@ -113,7 +152,7 @@ export default function PurchasesPage() {
               </TableHeader>
               <TableBody>
                 {filteredPurchases.length === 0 ? (
-                  <TableRow>
+                  <TableRow key="no-purchase">
                     <TableCell colSpan={6} className="text-center py-6 text-amber-700">
                       Aucun achat trouvé
                     </TableCell>
@@ -122,11 +161,13 @@ export default function PurchasesPage() {
                   filteredPurchases.map((purchase) => (
                     <TableRow key={purchase.id} className="border-b border-amber-300">
                       <TableCell className="text-amber-900">
-                        {new Date(purchase.date).toLocaleDateString()}
-                        <div className="text-xs text-amber-700">{new Date(purchase.date).toLocaleTimeString()}</div>
+                        {parseFrenchDate(purchase.date).toLocaleDateString()}
+                        {/* {new Date(purchase.date).toLocaleDateString()} */}
+                        {/* <div className="text-xs text-amber-700">{new Date(purchase.date).toLocaleTimeString()}</div> */}
+                        <div className="text-xs text-amber-700"> {parseFrenchDate(purchase.date).toLocaleTimeString()}</div>
                       </TableCell>
                       <TableCell className="font-medium text-amber-900">{purchase.supplier}</TableCell>
-                      <TableCell className="text-amber-900">{purchase.items}</TableCell>
+                      <TableCell className="text-amber-900">{purchase.quantity}</TableCell>
                       <TableCell className="text-amber-900">{purchase.total.toFixed(2)} FCFA</TableCell>
                       <TableCell>
                         <Badge
@@ -137,7 +178,7 @@ export default function PurchasesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="text-amber-800 hover:bg-amber-200">
+                        <Button  variant="ghost" size="icon" className="text-amber-800 hover:bg-amber-200">
                           <Eye className="h-4 w-4" />
                           <span className="sr-only">Voir</span>
                         </Button>

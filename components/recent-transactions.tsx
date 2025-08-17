@@ -1,51 +1,75 @@
+"use client"
+
+
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { useEffect, useState } from "react"
+import axios from "axios"
 
-const transactions = [
-  {
-    id: 1,
-    type: "sale",
-    description: "Vente #1234",
-    amount: 249.99,
-    date: "2023-04-13T10:45:00",
-    status: "complété",
-  },
-  {
-    id: 2,
-    type: "purchase",
-    description: "Réapprovisionnement",
-    amount: 1250.0,
-    date: "2023-04-13T09:30:00",
-    status: "complété",
-  },
-  {
-    id: 3,
-    type: "sale",
-    description: "Vente #1233",
-    amount: 79.99,
-    date: "2023-04-13T08:15:00",
-    status: "complété",
-  },
-  {
-    id: 4,
-    type: "sale",
-    description: "Vente #1232",
-    amount: 129.5,
-    date: "2023-04-12T17:45:00",
-    status: "complété",
-  },
-  {
-    id: 5,
-    type: "purchase",
-    description: "Paiement Fournisseur",
-    amount: 450.0,
-    date: "2023-04-12T14:30:00",
-    status: "complété",
-  },
-]
+// const transactions = [
+//   {
+//     id: 1,
+//     type: "sale",
+//     description: "Vente #1234",
+//     amount: 249.99,
+//     date: "2023-04-13T10:45:00",
+//     status: "complété",
+//   },
+//   {
+//     id: 2,
+//     type: "purchase",
+//     description: "Réapprovisionnement",
+//     amount: 1250.0,
+//     date: "2023-04-13T09:30:00",
+//     status: "complété",
+//   },
+//   {
+//     id: 3,
+//     type: "sale",
+//     description: "Vente #1233",
+//     amount: 79.99,
+//     date: "2023-04-13T08:15:00",
+//     status: "complété",
+//   },
+//   {
+//     id: 4,
+//     type: "sale",
+//     description: "Vente #1232",
+//     amount: 129.5,
+//     date: "2023-04-12T17:45:00",
+//     status: "complété",
+//   },
+//   {
+//     id: 5,
+//     type: "purchase",
+//     description: "Paiement Fournisseur",
+//     amount: 450.0,
+//     date: "2023-04-12T14:30:00",
+//     status: "complété",
+//   },
+// ]
 
 export function RecentTransactions() {
+
+  const [transactions, setTransactions] = useState([])
+  const token = localStorage.getItem("token")
+
+  useEffect(() => {
+    axios.get("http://127.0.0.1:8000/api/recent-transactions", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }).then((res) => {
+      setTransactions(res.data)
+    })
+  }, [])
+
+
+
+
+
   return (
     <Card className="border-4 border-amber-800 shadow-md bg-amber-100">
       <CardHeader className="bg-amber-800 text-white border-b-2 border-amber-900">
@@ -89,7 +113,7 @@ export function RecentTransactions() {
                   className={`text-sm font-medium ${transaction.type === "sale" ? "text-green-700" : "text-blue-700"}`}
                 >
                   {transaction.type === "sale" ? "+" : "-"}
-                  {transaction.amount.toFixed(2)} FCFA
+                  {Number(transaction.amount).toFixed(2)} FCFA
                 </span>
               </div>
             </div>

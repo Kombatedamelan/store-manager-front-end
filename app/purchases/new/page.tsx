@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useEffect} from "react"
+import axios from "axios"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,45 +13,45 @@ import { Label } from "@/components/ui/label"
 import { Trash, Plus, ArrowRight, Loader2 } from "lucide-react"
 
 // Sample product data
-const products = [
-  {
-    id: 1,
-    name: "Smartphone X",
-    price: 399.99,
-  },
-  {
-    id: 2,
-    name: "Écouteurs Sans Fil",
-    price: 149.0,
-  },
-  {
-    id: 3,
-    name: "Ordinateur Portable Pro",
-    price: 999.0,
-  },
-  {
-    id: 4,
-    name: "Montre Connectée",
-    price: 149.0,
-  },
-  {
-    id: 5,
-    name: "Enceinte Bluetooth",
-    price: 79.0,
-  },
-  {
-    id: 6,
-    name: "Tablette Mini",
-    price: 299.0,
-  },
-]
+// const products = [
+//   {
+//     id: 1,
+//     name: "Smartphone X",
+//     price: 399.99,
+//   },
+//   {
+//     id: 2,
+//     name: "Écouteurs Sans Fil",
+//     price: 149.0,
+//   },
+//   {
+//     id: 3,
+//     name: "Ordinateur Portable Pro",
+//     price: 999.0,
+//   },
+//   {
+//     id: 4,
+//     name: "Montre Connectée",
+//     price: 149.0,
+//   },
+//   {
+//     id: 5,
+//     name: "Enceinte Bluetooth",
+//     price: 79.0,
+//   },
+//   {
+//     id: 6,
+//     name: "Tablette Mini",
+//     price: 299.0,
+//   },
+// ]
 
 // Sample suppliers
-const suppliers = [
-  { id: 1, name: "Tech Supplies Inc." },
-  { id: 2, name: "Electronics Wholesale" },
-  { id: 3, name: "Gadget Distributors" },
-]
+// const suppliers = [
+//   { id: 1, name: "Tech Supplies Inc." },
+//   { id: 2, name: "Electronics Wholesale" },
+//   { id: 3, name: "Gadget Distributors" },
+// ]
 
 export default function NewPurchasePage() {
   const router = useRouter()
@@ -57,8 +59,46 @@ export default function NewPurchasePage() {
   const [selectedProduct, setSelectedProduct] = useState("")
   const [quantity, setQuantity] = useState("1")
   const [costPrice, setCostPrice] = useState("")
+  const [suppliers, setSuppliers] = useState<any[]>([])
   const [supplier, setSupplier] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [products, setProducts] = useState([])
+  const token = localStorage.getItem("token")
+
+  useEffect(() => {
+      const fetchProducts = async () => {
+        try {
+          const res = await axios.get("http://127.0.0.1:8000/api/products", {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }) 
+          
+          setProducts(res.data) 
+        } catch (error) {
+          console.error("Erreur lors du chargement des produits :", error)
+        }
+      }
+    
+      fetchProducts()
+    }, [])
+
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/suppliers", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }) 
+        setSuppliers(res.data) 
+      } catch (err) {
+        console.error("Erreur lors du chargement des catégories :", err)
+      }
+    }
+  
+    fetchSuppliers()
+  }, [])
 
   const handleAddItem = () => {
     if (!selectedProduct || !costPrice) return
@@ -109,7 +149,20 @@ export default function NewPurchasePage() {
     setIsLoading(true)
 
     // Simulate processing delay
-    setTimeout(() => {
+    setTimeout( async () => {
+      
+      for (const item of items) {
+        await axios.post(`http://127.0.0.1:8000/api/products/${item.productId}/add-stock`, {
+          qte: item.quantity,  
+          price: item.costPrice,  
+          user_id: supplier,  
+        }, 
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      }
       setIsLoading(false)
       router.push("/purchases")
     }, 2000)

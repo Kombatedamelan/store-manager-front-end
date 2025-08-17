@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useEffect} from "react"
+import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,100 +13,132 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSettings } from "@/contexts/settings-context"
 
 // Sample purchases history data
-const purchasesHistory = [
-  {
-    id: 1,
-    date: "2023-04-13T09:30:00",
-    supplier: "Tech Supplies Inc.",
-    items: 5,
-    total: 2499.95,
-    status: "reçu",
-  },
-  {
-    id: 2,
-    date: "2023-04-11T14:15:00",
-    supplier: "Electronics Wholesale",
-    items: 3,
-    total: 1847.0,
-    status: "reçu",
-  },
-  {
-    id: 3,
-    date: "2023-04-09T11:45:00",
-    supplier: "Gadget Distributors",
-    items: 2,
-    total: 998.0,
-    status: "reçu",
-  },
-  {
-    id: 4,
-    date: "2023-04-07T10:30:00",
-    supplier: "Tech Supplies Inc.",
-    items: 4,
-    total: 1596.0,
-    status: "reçu",
-  },
-  {
-    id: 5,
-    date: "2023-04-05T15:00:00",
-    supplier: "Electronics Wholesale",
-    items: 6,
-    total: 2994.0,
-    status: "reçu",
-  },
-  {
-    id: 6,
-    date: "2023-04-03T13:30:00",
-    supplier: "Gadget Distributors",
-    items: 3,
-    total: 1497.0,
-    status: "reçu",
-  },
-  {
-    id: 7,
-    date: "2023-04-01T11:15:00",
-    supplier: "Tech Supplies Inc.",
-    items: 2,
-    total: 998.0,
-    status: "reçu",
-  },
-  {
-    id: 8,
-    date: "2023-03-30T14:45:00",
-    supplier: "Electronics Wholesale",
-    items: 4,
-    total: 1996.0,
-    status: "reçu",
-  },
-  {
-    id: 9,
-    date: "2023-03-28T10:30:00",
-    supplier: "Gadget Distributors",
-    items: 5,
-    total: 2495.0,
-    status: "reçu",
-  },
-  {
-    id: 10,
-    date: "2023-03-26T13:15:00",
-    supplier: "Tech Supplies Inc.",
-    items: 3,
-    total: 1497.0,
-    status: "reçu",
-  },
-]
+// const purchasesHistory = [
+//   {
+//     id: 1,
+//     date: "2023-04-13T09:30:00",
+//     supplier: "Tech Supplies Inc.",
+//     items: 5,
+//     total: 2499.95,
+//     status: "reçu",
+//   },
+//   {
+//     id: 2,
+//     date: "2023-04-11T14:15:00",
+//     supplier: "Electronics Wholesale",
+//     items: 3,
+//     total: 1847.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 3,
+//     date: "2023-04-09T11:45:00",
+//     supplier: "Gadget Distributors",
+//     items: 2,
+//     total: 998.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 4,
+//     date: "2023-04-07T10:30:00",
+//     supplier: "Tech Supplies Inc.",
+//     items: 4,
+//     total: 1596.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 5,
+//     date: "2023-04-05T15:00:00",
+//     supplier: "Electronics Wholesale",
+//     items: 6,
+//     total: 2994.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 6,
+//     date: "2023-04-03T13:30:00",
+//     supplier: "Gadget Distributors",
+//     items: 3,
+//     total: 1497.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 7,
+//     date: "2023-04-01T11:15:00",
+//     supplier: "Tech Supplies Inc.",
+//     items: 2,
+//     total: 998.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 8,
+//     date: "2023-03-30T14:45:00",
+//     supplier: "Electronics Wholesale",
+//     items: 4,
+//     total: 1996.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 9,
+//     date: "2023-03-28T10:30:00",
+//     supplier: "Gadget Distributors",
+//     items: 5,
+//     total: 2495.0,
+//     status: "reçu",
+//   },
+//   {
+//     id: 10,
+//     date: "2023-03-26T13:15:00",
+//     supplier: "Tech Supplies Inc.",
+//     items: 3,
+//     total: 1497.0,
+//     status: "reçu",
+//   },
+// ]
 
 export default function PurchasesHistoryPage() {
   const { settings } = useSettings()
   const [searchQuery, setSearchQuery] = useState("")
   const [dateFilter, setDateFilter] = useState("all")
   const [supplierFilter, setSupplierFilter] = useState("all")
+  // const [suppliers, setSuppliers] = useState<any[]>([])
+  const token = localStorage.getItem("token")
+  
+  
+  const [purchasesHistory, setPurchasesHistory] = useState([])
+  
+    useEffect(() => {
+      const fetchPurchases = async () => {
+        try {
+          const res = await axios.get("http://127.0.0.1:8000/api/purchase", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }) // remplace par ton URL d'API
+          setPurchasesHistory(res.data.achats)
+        } catch (err) {
+          
+          console.error(err)
+        } 
+      }
+  
+      fetchPurchases()
+    }, [])
+
+   
+      
+
+  const parseCustomDate = (dateStr: string) => {
+    const [datePart, timePart] = dateStr.split(" ") // "23/04/2025", "17:21:37"
+    const [day, month, year] = datePart.split("/")
+    return new Date(`${year}-${month}-${day}T${timePart}`)
+  }
 
   // Filter purchases based on search query and filters
   const filteredPurchases = purchasesHistory.filter((purchase) => {
     const matchesSearch = purchase.supplier.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const purchaseDate = new Date(purchase.date)
+    const purchaseDate = parseCustomDate(purchase.date)
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
@@ -224,20 +258,21 @@ export default function PurchasesHistoryPage() {
               </TableHeader>
               <TableBody>
                 {filteredPurchases.length === 0 ? (
-                  <TableRow>
+                  <TableRow key="no-purchases">
                     <TableCell colSpan={6} className="text-center py-6 text-amber-700">
                       Aucun achat trouvé
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredPurchases.map((purchase) => (
+                    
                     <TableRow key={purchase.id} className="border-b border-amber-300">
                       <TableCell className="text-amber-900">
-                        {new Date(purchase.date).toLocaleDateString()}
-                        <div className="text-xs text-amber-700">{new Date(purchase.date).toLocaleTimeString()}</div>
+                        {parseCustomDate(purchase.date).toLocaleDateString()}
+                        <div className="text-xs text-amber-700">{parseCustomDate(purchase.date).toLocaleTimeString()}</div>
                       </TableCell>
                       <TableCell className="font-medium text-amber-900">{purchase.supplier}</TableCell>
-                      <TableCell className="text-amber-900">{purchase.items}</TableCell>
+                      <TableCell className="text-amber-900">{purchase.quantity}</TableCell>
                       <TableCell className="text-amber-900">
                         {purchase.total.toFixed(2)} {settings.currency}
                       </TableCell>

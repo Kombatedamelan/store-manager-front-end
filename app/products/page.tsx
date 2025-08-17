@@ -9,6 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Edit, Trash, Filter } from "lucide-react"
 import { ProductDialog } from "@/components/product-dialog"
+import { useEffect } from "react"
+import axios from "axios"
+
 
 // Sample product data
 const initialProducts = [
@@ -81,29 +84,69 @@ const initialProducts = [
 const categories = ["Toutes Catégories", "Électronique", "Audio", "Informatique", "Accessoires", "Stockage"]
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState(initialProducts)
+  const [products, setProducts] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("Toutes Catégories")
   const [stockFilter, setStockFilter] = useState("all")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentProduct, setCurrentProduct] = useState<any>(null)
+  const [categories, setCategories] = useState<any[]>([])
+  const token = localStorage.getItem("token")
+
+  //connection
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/products", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }) 
+        // console.log("Produits de l'API", res.data)
+        setProducts(res.data) // À adapter selon structure du JSON
+      } catch (error) {
+        console.error("Erreur lors du chargement des produits :", error)
+      }
+    }
+  
+    fetchProducts()
+  }, [])
+  
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/categories", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }) 
+        setCategories(res.data) 
+      } catch (err) {
+        console.error("Erreur lors du chargement des catégories :", err)
+      }
+    }
+  
+    fetchCategories()
+  }, [])
+  
 
   // Filter products based on search query and filters
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchQuery.toLowerCase())
+      product.ref.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const matchesCategory = categoryFilter === "Toutes Catégories" || product.category === categoryFilter
+    const matchesCategory = categoryFilter === "Toutes Catégories" || product.category.name === categoryFilter
 
     const matchesStock =
       stockFilter === "all" ||
-      (stockFilter === "low" && product.stock <= 5) ||
-      (stockFilter === "out" && product.stock === 0)
-
-    return matchesSearch && matchesCategory && matchesStock
-  })
-
+      (stockFilter === "low" && product.qte <= 5) ||
+      (stockFilter === "out" && product.qte === 0)
+      
+      return matchesSearch && matchesCategory && matchesStock
+    })
+    console.log("🔎 Produits filtrés :", filteredProducts);
+    
   const handleAddProduct = () => {
     setCurrentProduct(null)
     setIsDialogOpen(true)
@@ -114,21 +157,44 @@ export default function ProductsPage() {
     setIsDialogOpen(true)
   }
 
-  const handleDeleteProduct = (id: number) => {
+  const handleDeleteProduct = async (id: number) => {
+    await axios.delete('http://127.0.0.1:8000/api/products/'+id, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     setProducts(products.filter((product) => product.id !== id))
   }
 
-  const handleSaveProduct = (product: any) => {
+
+
+
+const handleSaveProduct = async (product: any) => {
     if (product.id) {
       // Update existing product
-      setProducts(products.map((p) => (p.id === product.id ? product : p)))
+      const response = await axios.put('http://127.0.0.1:8000/api/products/'+product.id, product, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      setProducts(products.map((p) => (p.id === product.id ?  response.data.product : p)))
     } else {
       // Add new product
+      
       const newProduct = {
         ...product,
         id: Math.max(...products.map((p) => p.id)) + 1,
       }
-      setProducts([...products, newProduct])
+      const response = await axios.post('http://127.0.0.1:8000/api/products', newProduct, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      console.log('Produit enregistré avec succès :', response.data);
+      
+      setProducts([...products,  response.data.product])
+
     }
     setIsDialogOpen(false)
   }
@@ -168,9 +234,12 @@ export default function ProductsPage() {
                     <SelectValue placeholder="Catégorie" />
                   </SelectTrigger>
                   <SelectContent className="bg-amber-50 border-2 border-amber-800">
+                  <SelectItem value="Toutes Catégories" className="text-amber-900">
+                    Toutes Catégories
+                  </SelectItem>
                     {categories.map((category) => (
-                      <SelectItem key={category} value={category} className="text-amber-900">
-                        {category}
+                      <SelectItem key={category.id} value={category.name} className="text-amber-900">
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -221,21 +290,24 @@ export default function ProductsPage() {
                   filteredProducts.map((product) => (
                     <TableRow key={product.id} className="border-b border-amber-300">
                       <TableCell className="font-medium text-amber-900">{product.name}</TableCell>
-                      <TableCell className="text-amber-900">{product.category}</TableCell>
-                      <TableCell className="text-amber-900">{product.price.toFixed(2)} FCFA</TableCell>
+                      
+                      {/* <TableCell className="text-amber-900">{product.category?.name ?? <em className="text-gray-500">Non catégorisé</em>}</TableCell> */}
+
+                      <TableCell className="text-amber-900">{product.category.name}</TableCell>
+                      <TableCell className="text-amber-900">{Number(product.price).toFixed(2)} FCFA</TableCell>
                       <TableCell>
                         <Badge
-                          variant={product.stock <= 5 ? "destructive" : "outline"}
+                          variant={product.qte <= 5 ? "destructive" : "outline"}
                           className={
-                            product.stock <= 5
+                            product.qte <= 5
                               ? "bg-red-100 text-red-800 border-2 border-red-500"
                               : "bg-amber-50 text-amber-900 border-2 border-amber-500"
                           }
                         >
-                          {product.stock} en stock
+                          {product.qte} en stock
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-amber-700">{product.sku}</TableCell>
+                      <TableCell className="text-amber-700">{product.ref}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button

@@ -1,5 +1,10 @@
 "use client"
 
+
+
+// import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { DialogTitle } from '@radix-ui/react-dialog'; // Importer DialogTitle
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'; 
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useSettings } from "@/contexts/settings-context"
 import { TruncateText } from "@/components/truncate-text"
+import { useRouter } from 'next/navigation';
 
 const routes = [
   {
@@ -64,6 +65,16 @@ const routes = [
     href: "/history/purchases",
   },
   {
+    label: "Fournisseurs",
+    icon: Package, // tu peux choisir une autre icône si tu veux
+    href: "/suppliers",
+  },
+  {
+    label: "Catégories",
+    icon: Package, // tu peux aussi changer ici
+    href: "/categories",
+  }, 
+  {
     label: "Paramètres",
     icon: Settings,
     href: "/settings",
@@ -73,7 +84,16 @@ const routes = [
 export function Sidebar() {
   const pathname = usePathname()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const { settings } = useSettings()
+  const { settings, resetSettings } = useSettings()
+   const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/");   
+    setTimeout(() => {
+      resetSettings();
+    }, 500);
+  };
 
   return (
     <>
@@ -119,6 +139,7 @@ export function Sidebar() {
             <div className="mt-auto border-t-2 border-amber-800 p-3">
               <Link href="/">
                 <Button
+                  onClick={handleLogout}
                   variant="outline"
                   className="w-full justify-start gap-2 border-2 border-amber-800 text-amber-900 font-medium"
                 >
@@ -161,6 +182,7 @@ export function Sidebar() {
           <div className="p-4 border-t-2 border-amber-800">
             <Link href="/">
               <Button
+                onClick={handleLogout}
                 variant="outline"
                 className="w-full justify-start gap-2 border-2 border-amber-800 text-amber-900 font-medium"
               >

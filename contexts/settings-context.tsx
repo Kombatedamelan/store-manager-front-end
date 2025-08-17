@@ -4,9 +4,9 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 
 // Types pour les paramètres de l'application
 export interface AppSettings {
-  storeName: string
-  storePhone: string
-  storeAddress: string
+  storeName?: string
+  storePhone?: string
+  storeAddress?: string
   currency: string
   logo?: string
   primaryColor: string

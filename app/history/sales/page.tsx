@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useEffect} from "react"
+import axios from "axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,131 +13,168 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSettings } from "@/contexts/settings-context"
 
 // Sample sales history data
-const salesHistory = [
-  {
-    id: 1,
-    date: "2023-04-13T14:30:00",
-    customer: "Jean Dupont",
-    items: 3,
-    total: 749.97,
-    payment: "Espèces",
-    status: "complété",
-  },
-  {
-    id: 2,
-    date: "2023-04-13T12:15:00",
-    customer: "Marie Martin",
-    items: 2,
-    total: 398.0,
-    payment: "Carte",
-    status: "complété",
-  },
-  {
-    id: 3,
-    date: "2023-04-13T10:45:00",
-    customer: "Robert Dubois",
-    items: 1,
-    total: 199.0,
-    payment: "Espèces",
-    status: "complété",
-  },
-  {
-    id: 4,
-    date: "2023-04-12T16:30:00",
-    customer: "Émilie Petit",
-    items: 4,
-    total: 1256.96,
-    payment: "Carte",
-    status: "complété",
-  },
-  {
-    id: 5,
-    date: "2023-04-12T14:00:00",
-    customer: "Michel Leroy",
-    items: 2,
-    total: 598.99,
-    payment: "Espèces",
-    status: "complété",
-  },
-  {
-    id: 6,
-    date: "2023-04-12T11:30:00",
-    customer: "Sophie Moreau",
-    items: 1,
-    total: 129.99,
-    payment: "Carte",
-    status: "complété",
-  },
-  {
-    id: 7,
-    date: "2023-04-11T15:45:00",
-    customer: "David Roux",
-    items: 3,
-    total: 847.97,
-    payment: "Espèces",
-    status: "complété",
-  },
-  {
-    id: 8,
-    date: "2023-04-11T13:15:00",
-    customer: "Lisa Fournier",
-    items: 2,
-    total: 398.0,
-    payment: "Carte",
-    status: "complété",
-  },
-  {
-    id: 9,
-    date: "2023-04-10T16:30:00",
-    customer: "Jacques André",
-    items: 1,
-    total: 499.99,
-    payment: "Espèces",
-    status: "complété",
-  },
-  {
-    id: 10,
-    date: "2023-04-10T14:15:00",
-    customer: "Jennifer Thomas",
-    items: 3,
-    total: 747.0,
-    payment: "Carte",
-    status: "complété",
-  },
-  {
-    id: 11,
-    date: "2023-04-09T15:30:00",
-    customer: "Robert Blanc",
-    items: 2,
-    total: 598.0,
-    payment: "Espèces",
-    status: "complété",
-  },
-  {
-    id: 12,
-    date: "2023-04-09T13:45:00",
-    customer: "Patricia Harris",
-    items: 4,
-    total: 1196.96,
-    payment: "Carte",
-    status: "complété",
-  },
-]
+// const salesHistory = [
+//   {
+//     id: 1,
+//     date: "2023-04-13T14:30:00",
+//     customer: "Jean Dupont",
+//     items: 3,
+//     total: 749.97,
+//     payment: "Espèces",
+//     status: "complété",
+//   },
+//   {
+//     id: 2,
+//     date: "2023-04-13T12:15:00",
+//     customer: "Marie Martin",
+//     items: 2,
+//     total: 398.0,
+//     payment: "Carte",
+//     status: "complété",
+//   },
+//   {
+//     id: 3,
+//     date: "2023-04-13T10:45:00",
+//     customer: "Robert Dubois",
+//     items: 1,
+//     total: 199.0,
+//     payment: "Espèces",
+//     status: "complété",
+//   },
+//   {
+//     id: 4,
+//     date: "2023-04-12T16:30:00",
+//     customer: "Émilie Petit",
+//     items: 4,
+//     total: 1256.96,
+//     payment: "Carte",
+//     status: "complété",
+//   },
+//   {
+//     id: 5,
+//     date: "2023-04-12T14:00:00",
+//     customer: "Michel Leroy",
+//     items: 2,
+//     total: 598.99,
+//     payment: "Espèces",
+//     status: "complété",
+//   },
+//   {
+//     id: 6,
+//     date: "2023-04-12T11:30:00",
+//     customer: "Sophie Moreau",
+//     items: 1,
+//     total: 129.99,
+//     payment: "Carte",
+//     status: "complété",
+//   },
+//   {
+//     id: 7,
+//     date: "2023-04-11T15:45:00",
+//     customer: "David Roux",
+//     items: 3,
+//     total: 847.97,
+//     payment: "Espèces",
+//     status: "complété",
+//   },
+//   {
+//     id: 8,
+//     date: "2023-04-11T13:15:00",
+//     customer: "Lisa Fournier",
+//     items: 2,
+//     total: 398.0,
+//     payment: "Carte",
+//     status: "complété",
+//   },
+//   {
+//     id: 9,
+//     date: "2023-04-10T16:30:00",
+//     customer: "Jacques André",
+//     items: 1,
+//     total: 499.99,
+//     payment: "Espèces",
+//     status: "complété",
+//   },
+//   {
+//     id: 10,
+//     date: "2023-04-10T14:15:00",
+//     customer: "Jennifer Thomas",
+//     items: 3,
+//     total: 747.0,
+//     payment: "Carte",
+//     status: "complété",
+//   },
+//   {
+//     id: 11,
+//     date: "2023-04-09T15:30:00",
+//     customer: "Robert Blanc",
+//     items: 2,
+//     total: 598.0,
+//     payment: "Espèces",
+//     status: "complété",
+//   },
+//   {
+//     id: 12,
+//     date: "2023-04-09T13:45:00",
+//     customer: "Patricia Harris",
+//     items: 4,
+//     total: 1196.96,
+//     payment: "Carte",
+//     status: "complété",
+//   },
+// ]
 
 export default function SalesHistoryPage() {
   const { settings } = useSettings()
   const [searchQuery, setSearchQuery] = useState("")
   const [dateFilter, setDateFilter] = useState("all")
   const [paymentFilter, setPaymentFilter] = useState("all")
+  const [salesHistory, setSalesHistory] = useState([])
+  const token = localStorage.getItem("token")
+    
+  useEffect(() => {
+    const fetchSales = async () => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/orders", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }) // remplace par ton URL d'API
+        setSalesHistory(res.data)
+      } catch (err) {
+        
+        console.error(err)
+      } 
+    }
+
+    fetchSales()
+  }, [])
+
+  function parseCustomDate(dateString: string) {
+    const [datePart, timePart] = dateString.split(" ");
+    const [day, month, year] = datePart.split("/");
+    return new Date(`${year}-${month}-${day}T${timePart}`);
+  }
 
   // Filter sales based on search query and filters
   const filteredSales = salesHistory.filter((sale) => {
     const matchesSearch = sale.customer.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const saleDate = new Date(sale.date)
+    // const rawDate = sale.date; 
+    // const [datePart, timePart] = rawDate.split(" "); 
+    // const [day, month, year] = datePart.split("/"); 
+
+    // const formattedDate = `${year}-${month}-${day}T${timePart}`; 
+
+    const saleDate = parseCustomDate(sale.date)
     const today = new Date()
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
+
+    
+
+    
+
 
     const matchesDate =
       dateFilter === "all" ||
@@ -147,6 +186,8 @@ export default function SalesHistoryPage() {
 
     return matchesSearch && matchesDate && matchesPayment
   })
+
+  
 
   // Calculate total sales amount
   const totalSalesAmount = filteredSales.reduce((sum, sale) => sum + sale.total, 0)
@@ -249,20 +290,21 @@ export default function SalesHistoryPage() {
               </TableHeader>
               <TableBody>
                 {filteredSales.length === 0 ? (
-                  <TableRow>
+                  <TableRow key="no-sales">
                     <TableCell colSpan={7} className="text-center py-6 text-amber-700">
                       Aucune vente trouvée
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredSales.map((sale) => (
+                    
                     <TableRow key={sale.id} className="border-b border-amber-300">
                       <TableCell className="text-amber-900">
-                        {new Date(sale.date).toLocaleDateString()}
-                        <div className="text-xs text-amber-700">{new Date(sale.date).toLocaleTimeString()}</div>
+                        {parseCustomDate(sale.date).toLocaleDateString()}
+                        <div className="text-xs text-amber-700">{parseCustomDate(sale.date).toLocaleTimeString()}</div>
                       </TableCell>
                       <TableCell className="font-medium text-amber-900">{sale.customer}</TableCell>
-                      <TableCell className="text-amber-900">{sale.items}</TableCell>
+                      <TableCell className="text-amber-900">{sale.quantity}</TableCell>
                       <TableCell className="text-amber-900">
                         {sale.total.toFixed(2)} {settings.currency}
                       </TableCell>

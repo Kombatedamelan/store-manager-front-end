@@ -1,3 +1,10 @@
+"use client"
+
+import { useState } from "react"
+import { useEffect} from "react"
+import axios from "axios"
+
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -7,6 +14,48 @@ import { TopProducts } from "@/components/top-products"
 import { RecentTransactions } from "@/components/recent-transactions"
 
 export default function DashboardPage() {
+
+   const [products, setProducts] = useState([])
+
+   const [items, setItems] = useState([])
+   const token = localStorage.getItem("token")
+  
+
+    useEffect(() => {
+      axios
+        .get("http://127.0.0.1:8000/api/dashboard", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res) => {
+          setItems(res.data)
+        })
+        .catch((error) => {
+          console.error("Erreur dashboard :", error)
+        })
+    }, [])
+  
+  
+    useEffect(() => {
+      const fetchProducts = async () => {
+        try {
+          const res = await axios.get("http://127.0.0.1:8000/api/products", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+    
+          setProducts(res.data)
+        } catch (error) {
+          console.error("Erreur lors du chargement des produits :", error)
+        }
+      }
+    
+      fetchProducts()
+    }, [])
+    
+      
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between bg-amber-100 p-4 rounded-lg border-4 border-amber-800 shadow-md">
@@ -26,8 +75,8 @@ export default function DashboardPage() {
             <DollarSign className="w-4 h-4 text-amber-100" />
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-amber-900">1,245.89 FCFA</div>
-            <p className="text-xs text-green-700 font-bold">+18% depuis hier</p>
+            <div className="text-2xl font-bold text-amber-900">{items.sales_today}</div>
+            {/* <p className="text-xs text-green-700 font-bold">+18% depuis hier</p> */}
           </CardContent>
         </Card>
         <Card className="border-4 border-amber-800 shadow-md bg-amber-100">
@@ -36,8 +85,8 @@ export default function DashboardPage() {
             <Package className="w-4 h-4 text-amber-100" />
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-amber-900">42</div>
-            <p className="text-xs text-green-700 font-bold">+8% depuis hier</p>
+            <div className="text-2xl font-bold text-amber-900">{items.products_sold}</div>
+            {/* <p className="text-xs text-green-700 font-bold">+8% depuis hier</p> */}
           </CardContent>
         </Card>
         <Card className="border-4 border-amber-800 shadow-md bg-amber-100">
@@ -46,8 +95,8 @@ export default function DashboardPage() {
             <TrendingUp className="w-4 h-4 text-amber-100" />
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-amber-900">15</div>
-            <p className="text-xs text-green-700 font-bold">+5% depuis hier</p>
+            <div className="text-2xl font-bold text-amber-900">{items.sales}</div>
+            {/* <p className="text-xs text-green-700 font-bold">+5% depuis hier</p> */}
           </CardContent>
         </Card>
       </div>
@@ -55,7 +104,7 @@ export default function DashboardPage() {
       <Alert variant="destructive" className="bg-red-100 border-4 border-red-600 text-red-800">
         <AlertTriangle className="h-5 w-5" />
         <AlertTitle className="font-bold">ALERTE STOCK FAIBLE</AlertTitle>
-        <AlertDescription>3 produits sont en rupture de stock. Vérifiez l'inventaire.</AlertDescription>
+        <AlertDescription>{products.filter(product => product.qte < 5).length} produits sont en rupture de stock. Vérifiez l'inventaire.</AlertDescription>
       </Alert>
 
       <div className="grid gap-6 md:grid-cols-2">

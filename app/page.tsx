@@ -10,14 +10,19 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Phone, Lock, Loader2 } from "lucide-react"
 import { useSettings } from "@/contexts/settings-context"
+import axios from "axios"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { settings } = useSettings()
-  const [phone, setPhone] = useState("")
-  const [password, setPassword] = useState("")
+  const { updateSettings, settings } = useSettings()
+  const [adminPhone, setPhone] = useState("")
+  const [adminPassword, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+   const [formData, setFormData] = useState({
+      adminPhone: "",
+      adminPassword: "",
+    });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,23 +30,63 @@ export default function LoginPage() {
     setIsLoading(true)
 
     // Validation simple
-    if (!phone || !password) {
+    if (!adminPhone || !adminPassword) {
       setError("Veuillez remplir tous les champs")
       setIsLoading(false)
       return
     }
 
-    // Simulate authentication delay
-    setTimeout(() => {
-      setIsLoading(false)
+    // Vérifier les identifiants avec les paramètres
+      try {
+        
+         // 1. appel POST /login
+        const res = await fetch("http://127.0.0.1:8000/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ adminPhone, adminPassword }),
+        });
 
-      // Vérifier les identifiants avec les paramètres
-      if (phone === settings.adminPhone && password === settings.adminPassword) {
-        router.push("/dashboard")
-      } else {
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || "Identifiants incorrects");
+        }
+
+        const loginData = await res.json();
+        console.log("Login response:", loginData);
+
+        const token = loginData.token;
+
+        if (!token) throw new Error("Token manquant dans la réponse de login");
+        // 2. Stockage du token
+        localStorage.setItem("token", token);
+
+        // 3. Récupérer les infos utilisateur
+        const meRes = await fetch("http://127.0.0.1:8000/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!meRes.ok) throw new Error("Impossible de récupérer les infos utilisateur");
+
+        const user = await meRes.json();
+        console.log("Utilisateur connecté", user);
+
+        // 4. Mettre à jour le contexte
+        updateSettings({
+          storeName: user.storeName,
+          storePhone: user.storePhone,
+          storeAddress: user.storeAddress,
+          currency: user.currency,
+          primaryColor: "amber",
+          adminPhone: user.adminPhone,
+          adminPassword: "", // jamais stocker le mot de passe
+        });
+         
+        setTimeout(() => {
+          router.push("/dashboard")
+        }, 1500)
+      } catch (err: any)  {
+        console.log("Erreur de connexion:", err);
         setError("Numéro de téléphone ou mot de passe incorrect")
-      }
-    }, 1500)
+    }
   }
 
   return (
@@ -69,7 +114,7 @@ export default function LoginPage() {
                   type="tel"
                   placeholder="Entrez votre numéro"
                   className="pl-12 py-7 text-lg border-3 border-amber-800 bg-white text-amber-900"
-                  value={phone}
+                  value={adminPhone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
                 />
@@ -87,9 +132,9 @@ export default function LoginPage() {
                   type="password"
                   placeholder="Entrez votre mot de passe"
                   className="pl-12 py-7 text-lg border-3 border-amber-800 bg-white text-amber-900"
-                  value={password}
+                  value={adminPassword}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
+                  
                 />
               </div>
               <p className="text-xs text-amber-700">Démo: {settings.adminPassword}</p>

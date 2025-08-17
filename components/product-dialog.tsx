@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import axios from "axios"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -18,34 +19,54 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const categories = ["Électronique", "Audio", "Informatique", "Accessoires", "Stockage"]
 
+
 export function ProductDialog({ open, onOpenChange, product, onSave }: any) {
   const [formData, setFormData] = useState({
     id: null,
     name: "",
-    category: "",
+    categorie_id: "",
     price: "",
-    stock: "",
-    sku: "",
+    qte: "",
+    ref: "",
   })
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
+  const token = localStorage.getItem("token")
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get("http://127.0.0.1:8000/api/categories", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        setCategories(res.data)
+      } catch (err) {
+        console.error("Erreur lors du chargement des catégories :", err)
+      }
+    }
+  
+    fetchCategories()
+  }, [])
+  
 
   useEffect(() => {
     if (product) {
       setFormData({
         id: product.id,
         name: product.name,
-        category: product.category,
+        categorie_id: String(product.category.id),
         price: product.price.toString(),
-        stock: product.stock.toString(),
-        sku: product.sku,
+        qte: product.qte.toString(),
+        ref: product.ref,
       })
     } else {
       setFormData({
         id: null,
         name: "",
-        category: categories[0],
+        categorie_id: categories[0],
         price: "",
-        stock: "",
-        sku: "",
+        qte: "",
+        ref: "",
       })
     }
   }, [product])
@@ -56,7 +77,7 @@ export function ProductDialog({ open, onOpenChange, product, onSave }: any) {
   }
 
   const handleCategoryChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, category: value }))
+    setFormData((prev) => ({ ...prev, categorie_id: value }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -64,7 +85,7 @@ export function ProductDialog({ open, onOpenChange, product, onSave }: any) {
     onSave({
       ...formData,
       price: Number.parseFloat(formData.price),
-      stock: Number.parseInt(formData.stock),
+      qte: Number.parseInt(formData.qte),
     })
   }
 
@@ -96,14 +117,14 @@ export function ProductDialog({ open, onOpenChange, product, onSave }: any) {
               <Label htmlFor="category" className="text-right font-bold text-amber-900">
                 Catégorie
               </Label>
-              <Select value={formData.category} onValueChange={handleCategoryChange}>
+              <Select value={formData.categorie_id} onValueChange={handleCategoryChange}>
                 <SelectTrigger className="col-span-3 border-2 border-amber-800 bg-white text-amber-900">
                   <SelectValue placeholder="Sélectionner une catégorie" />
                 </SelectTrigger>
                 <SelectContent className="bg-amber-50 border-2 border-amber-800">
                   {categories.map((category) => (
-                    <SelectItem key={category} value={category} className="text-amber-900">
-                      {category}
+                    <SelectItem key={category.id} value={String(category.id)} className="text-amber-900">
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -131,10 +152,10 @@ export function ProductDialog({ open, onOpenChange, product, onSave }: any) {
               </Label>
               <Input
                 id="stock"
-                name="stock"
+                name="qte"
                 type="number"
                 min="0"
-                value={formData.stock}
+                value={formData.qte}
                 onChange={handleChange}
                 className="col-span-3 border-2 border-amber-800 bg-white text-amber-900"
                 required
@@ -146,8 +167,8 @@ export function ProductDialog({ open, onOpenChange, product, onSave }: any) {
               </Label>
               <Input
                 id="sku"
-                name="sku"
-                value={formData.sku}
+                name="ref"
+                value={formData.ref}
                 onChange={handleChange}
                 className="col-span-3 border-2 border-amber-800 bg-white text-amber-900"
                 required
